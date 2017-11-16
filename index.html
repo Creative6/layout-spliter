@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>BUG</title>
+  <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.js"></script>
+  <script src="https://cdn.bootcss.com/echarts/3.7.2/echarts.js"></script>
+  <link rel="stylesheet" href="http://at.alicdn.com/t/font_475124_g9tk1lkpgj9bpgb9.css">
+  <script src="./echart.js"></script>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+    }
+
+    div {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    .content {
+      width: 100%;
+      height: 100vh;
+      /* border: 1px solid red; */
+      background: #eee;
+      position: relative;
+      box-shadow: 0px 1px 5px #555;
+    }
+
+    .horizontal_line {
+      border: 1px dashed #666;
+      position: absolute;
+      width: 100%;
+      top: 0;
+      left: 0;
+      height: 0px;
+    }
+
+    .vertical_line {
+      border: 1px dashed #666;
+      position: absolute;
+      height: 100%;
+      width: 0;
+      left: 0;
+      top: 0;
+    }
+
+    .horizontal_box {
+      width: 100%;
+      float: left;
+      position: relative;
+    }
+
+    .vertical_box {
+      float: left;
+      position: relative;
+      height: 100%;
+    }
+
+    button {
+      position: absolute;
+    }
+
+    .add_h_btn {
+      right: 0px;
+      top: 0px;
+    }
+
+    .add_v_btn {
+      right: 30px;
+      top: 0px;
+    }
+
+    .del_btn {
+      right: 60px;
+      top: 0px;
+    }
+
+    .fgline1 {
+      float: left;
+      width: 6px;
+      height: 100%;
+      background: #000;
+    }
+
+    .fgline1:hover {
+      background: #666 !important;
+      cursor: w-resize;
+    }
+
+    .fgline- {
+      float: left;
+      width: 100%;
+      height: 6px;
+      background: #000;
+    }
+
+    .fgline-:hover {
+      background: #666 !important;
+      cursor: n-resize;
+    }
+
+    .conbox {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform: translate(-50%, -50%);
+      left: 50%;
+      top: 50%;
+    }
+
+    .conbox_content {
+      height: calc(100% - 22px);
+      background: #4e4e4e;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .conbox_title {
+      background: #000;
+      height: 22px;
+      color: #fff;
+      width: 100%;
+    }
+
+    .conbox_fucbtn {
+      height: 16px;
+      width: 16px;
+      float: right;
+      /* background: #555; */
+      margin: 2px 2px;
+      border-radius: 24px;
+      text-align: center;
+      line-height: 13px;
+      cursor: pointer;
+    }
+
+    .conbox_fucbtn i {
+      font-size: 12px;
+      color: #aaa;
+      transition: color 0.2s;
+    }
+
+    .conbox_fucbtn i:hover {
+      color: #fff;
+    }
+  </style>
+  <script>
+    var baba = undefined;
+    var type = undefined;
+    var idx = 0;
+    var conE = undefined;
+    var box1 = undefined;
+    var box2 = undefined;
+    var boxw = undefined;
+    var boxh = undefined;
+    var down = false;
+
+    $(function () {
+      $(window).mousemove(function (e) {
+        if (down) {
+          if (nowDragDirection === 'v') {
+            var total_w = conE.width();
+            var averageNum = box1.attr('averageNum') * 1;
+            var percentNum1 = (e.clientX - box1.offset().left + averageNum) * 100 / total_w;
+            var percentNum2 = (boxw - (e.clientX - box1.offset().left) + averageNum) * 100 / total_w;
+            box1.css('width', 'calc(' + percentNum1 + '% - ' + averageNum + 'px)');
+            box2.css('width', 'calc(' + percentNum2 + '% - ' + averageNum + 'px)');
+          } else if (nowDragDirection === 'h') {
+            var total_h = conE.height();
+            var averageNum = box1.attr('averageNum') * 1;
+            var percentNum1 = (e.clientY - box1.offset().top + averageNum) * 100 / total_h;
+            var percentNum2 = (boxh - (e.clientY - box1.offset().top) + averageNum) * 100 / total_h;
+            box1.css('height', 'calc(' + percentNum1 + '% - ' + averageNum + 'px)');
+            box2.css('height', 'calc(' + percentNum2 + '% - ' + averageNum + 'px)');
+          }
+        }
+      })
+
+      $(window).on("resize", function () {
+        resizeall();
+      })
+
+      $(window).on('mouseup', function (e) {
+        down = false;
+        box1 = undefined;
+        box2 = undefined;
+        nowDragDirection = undefined;
+        $('.fgline-').css('background', '#000');
+        $('.fgline1').css('background', '#000');
+        $('.content').css('cursor', 'default');
+        resizeall();
+      });
+
+      $(window).on('mousedown', function (e) {
+        // $('.content').css("cursor", "default");
+        var $t = $(e.target);
+        var cn = $(e.target)[0].className;
+        conE = $t.parent();
+        if (cn === 'fgline1' || cn === 'fgline-') {
+          down = true;
+          box1 = $t.prev();
+          box2 = $t.next();
+          boxw = box1.width() + box2.width();
+          boxh = box1.height() + box2.height();
+          console.log(boxw, boxh)
+        }
+
+        if (type === 'horizontal') {
+          var topf = baba;
+          if (topf.attr('type')) {
+            while (topf.attr('type').split('_')[1] != 'A') {
+              topf = topf.parent()
+            }
+          }
+
+          var all = topf.height();
+          var h_total = baba.height();
+          var h_top = getConfirmNum;
+          var h_down = h_total - h_top;
+
+          var top_percent = (h_top * 100 / all);
+          var down_percent = (h_down * 100 / all);
+          var p = [];
+          var color = '#ccc';
+          p.push('<div type="A_R" id="box' + idx + '" class="horizontal_box" style="height:calc(' + top_percent +
+            '% - 3px);background:' + color + ';">');
+          p.push('<div class="conbox_title">');
+          p.push('<div class="conbox_fucbtn" onclick="del(' + idx +
+            ')"><i class="iconfont icon-guanbi"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_h(' + idx +
+            ')"><i class="iconfont icon-horizontal"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_v(' + idx +
+            ')"><i class="iconfont icon-vertical"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="echartf(' + idx +
+            ')"><i class="iconfont icon-charts-b"></i></div>');
+          p.push('</div>');
+          p.push('<div class="conbox_content" id="con' + idx + '"></div>');
+          p.push('</div>');
+          idx++;
+          p.push('<div class="fgline-" onmousedown="nowh(this)"></div>');
+          p.push('<div type="A_R" id="box' + idx + '" class="horizontal_box" style="height:calc(' +
+            down_percent + '% - 3px);background:' + color + ';">');
+          p.push('<div class="conbox_title">');
+          p.push('<div class="conbox_fucbtn" onclick="del(' + idx +
+            ')"><i class="iconfont icon-guanbi"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_h(' + idx +
+            ')"><i class="iconfont icon-horizontal"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_v(' + idx +
+            ')"><i class="iconfont icon-vertical"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="echartf(' + idx +
+            ')"><i class="iconfont icon-charts-b"></i></div>');
+          p.push('</div>');
+          p.push('<div class="conbox_content" id="con' + idx + '"></div>');
+          p.push('</div>');
+          idx++;
+
+          if (typeh === 'A') {
+            baba.empty();
+            baba.append(p.join(''));
+          } else if (typeh === 'R') {
+            baba.replaceWith(p.join(''));
+          }
+
+          var childrenNum = topf.children('.horizontal_box').length;
+          var borderNum = (childrenNum - 1) * 6;
+          var averageNum = borderNum / childrenNum;
+          topf.children('.horizontal_box').each(function () {
+            var thisper = ($(this).height() + averageNum) * 100 / all;
+            $(this).css('height', 'calc(' + thisper + '% - ' + averageNum + 'px)');
+            $(this).attr('averageNum', averageNum);
+          })
+
+          {
+            baba.off('mousemove');
+            type = undefined;
+            baba = undefined;
+            removeline();
+          }
+        } else if (type === 'vertical') {
+          var topf = baba;
+          if (topf.attr('type')) {
+            while (topf.attr('type').split('_')[0] != 'A') {
+              topf = topf.parent()
+            }
+          }
+
+          var all = topf.width();
+          var h_total = baba.width();
+          var h_left = getConfirmNum;
+          var h_right = h_total - h_left;
+
+
+          var left_percent = (h_left * 100 / all);
+          var right_percent = (h_right * 100 / all);
+
+          var p = [];
+          var color = '#ccc';
+          p.push('<div type="R_A" id="box' + idx + '" class="vertical_box"  style="width:calc(' + left_percent +
+            '% - 3px);background:' + color + ';">');
+          p.push('<div class="conbox_title">');
+          p.push('<div class="conbox_fucbtn" onclick="del(' + idx +
+            ')"><i class="iconfont icon-guanbi"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_h(' + idx +
+            ')"><i class="iconfont icon-horizontal"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_v(' + idx +
+            ')"><i class="iconfont icon-vertical"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="echartf(' + idx +
+            ')"><i class="iconfont icon-charts-b"></i></div>');
+          p.push('</div>');
+          p.push('<div class="conbox_content" id="con' + idx + '"></div>');
+          p.push('</div>');
+          idx++;
+          p.push('<div class="fgline1" onmousedown="nowv(this)"></div>');
+          p.push('<div type="R_A"  id="box' + idx + '" class="vertical_box" style="width:calc(' + right_percent +
+            '% - 3px);background:' + color + ';">');
+          p.push('<div class="conbox_title">');
+          p.push('<div class="conbox_fucbtn" onclick="del(' + idx +
+            ')"><i class="iconfont icon-guanbi"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_h(' + idx +
+            ')"><i class="iconfont icon-horizontal"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="add_v(' + idx +
+            ')"><i class="iconfont icon-vertical"></i></div>');
+          p.push('<div class="conbox_fucbtn" onclick="echartf(' + idx +
+            ')"><i class="iconfont icon-charts-b"></i></div>');
+          p.push('</div>');
+          p.push('<div class="conbox_content" id="con' + idx + '"></div>');
+          p.push('</div>');
+          idx++;
+
+          if (typev === 'A') {
+            baba.empty();
+            baba.append(p.join(''));
+          } else if (typev === 'R') {
+            baba.replaceWith(p.join(''));
+          }
+
+          var childrenNum = topf.children('.vertical_box').length;
+          var borderNum = (childrenNum - 1) * 6;
+          var averageNum = borderNum / childrenNum;
+          topf.children('.vertical_box').each(function () {
+            var thisper = ($(this).width() + averageNum) * 100 / all;
+            $(this).css('width', 'calc(' + thisper + '% - ' + averageNum + 'px)');
+            $(this).attr('averageNum', averageNum);
+          })
+
+
+          {
+            baba.off('mousemove');
+            type = undefined;
+            baba = undefined;
+            removeline();
+          }
+        }
+      });
+    });
+
+
+    {
+      var nowDragDirection = undefined;
+
+      function nowh(t) {
+        if (!nowDragDirection) {
+          nowDragDirection = 'h';
+          $(t).css('background', '#666');
+          $('.content').css('cursor', 'n-resize');
+        }
+      }
+
+      function nowv(t) {
+        if (!nowDragDirection) {
+          nowDragDirection = 'v';
+          $(t).css('background', '#666');
+          $('.content').css('cursor', 'w-resize')
+        }
+      }
+    }
+
+    {
+      var typev = undefined;
+      var typeh = undefined;
+      var getConfirmNum = undefined;
+
+      function add_h(id) {
+        $('.content').css("cursor", "crosshair");
+        type = 'horizontal';
+        removeline();
+        baba = $('#box' + id);
+        var t = baba.attr('type');
+        typev = t.split('_')[0];
+        typeh = t.split('_')[1];
+        baba.append('<div class="horizontal_line"></div>');
+        baba.on('mousemove', function (e) {
+          var h = e.clientY - baba.offset().top;
+          getConfirmNum = h;
+          $('.horizontal_line').css('top', h + 'px');
+        });
+      }
+
+      function add_v(id) {
+        $('.content').css("cursor", "crosshair");
+        type = 'vertical';
+        removeline();
+        baba = $('#box' + id);
+        var t = baba.attr('type');
+        typev = t.split('_')[0];
+        typeh = t.split('_')[1];
+        baba.append('<div class="vertical_line"></div>');
+        baba.on('mousemove', function (e) {
+          var h = e.clientX - baba.offset().left;
+          getConfirmNum = h;
+          $('.vertical_line').css('left', h + 'px');
+        });
+      }
+    }
+
+
+    function del(id) { //======================================bug
+      var el = $('#box' + id);
+
+      var _el = undefined;
+
+      var n = el.next().attr('class');
+      var p = el.prev().attr('class')
+      if (n === 'fgline1' || n === 'fgline-') {
+        _el = el.next().next();
+        el.next().remove();
+        n === 'fgline1' ? _el.width('100%') : _el.height('100%');
+      } else if (p === 'fgline1' || p === 'fgline-') {
+        _el = el.prev().prev();
+        el.prev().remove();
+        p === 'fgline1' ? _el.width('100%') : _el.height('100%');
+      }
+      el.remove();
+
+    }
+
+    function removeline() {
+      $('.horizontal_line').remove();
+      $('.vertical_line').remove();
+    }
+
+    {
+      var einstance = [];
+
+      function echartf(id) {
+        var a = Math.floor(Math.random() * 10);
+        a > 4 ? a = a - 5 : '';
+
+        var myChart = echarts.init(document.getElementById('con' + id));
+        myChart.clear();
+        einstance.push(myChart);
+        myChart.setOption(option[a]);
+      }
+
+      function resizeall() {
+        for (let i = 0; i < einstance.length; i++) {
+          const element = einstance[i];
+          element.resize();
+        }
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="content" id='box' type='A_A'>
+    <button onclick="add_h('')" class="add_h_btn">-</button>
+    <button onclick="add_v('')" class="add_v_btn">|</button>
+  </div>
+
+
+</body>
