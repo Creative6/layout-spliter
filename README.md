@@ -6,5 +6,5 @@ Split label（horizontal，vertical），you can make a layout whatever you want
 ![image](https://github.com/Creative6/layout-spliter/blob/master/qwe15.gif)
 
 
-
+响应式布局![image](https://github.com/Creative6/layout-spliter/blob/master/myimg/huaji.png)
 ![image](https://github.com/Creative6/layout-spliter/blob/master/qwe16.gif)
